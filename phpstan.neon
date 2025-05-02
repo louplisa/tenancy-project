@@ -1,0 +1,20 @@
+includes:
+  - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+  ignoreErrors:
+    - '#Parameter \#2 \$string of function explode expects string, bool\|string given\.#'
+  level: 8
+  paths:
+    - app
+    - config
+    - database
+    - routes
+    - tests
+
+
+  excludePaths:
+    - vendor/*
+    - storage/*
+    - bootstrap/cache/*
+

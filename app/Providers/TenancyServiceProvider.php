@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -18,7 +19,10 @@ class TenancyServiceProvider extends ServiceProvider
     // By default, no namespace is used to support the callable array syntax.
     public static string $controllerNamespace = '';
 
-    public function events()
+    /**
+     * @return array<class-string, array<int, class-string>>
+     */
+    public function events(): array
     {
         return [
             // Tenant events
@@ -34,7 +38,7 @@ class TenancyServiceProvider extends ServiceProvider
 
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                })->shouldBeQueued(false),
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
@@ -46,7 +50,7 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\DeleteDatabase::class,
                 ])->send(function (Events\TenantDeleted $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                })->shouldBeQueued(false),
             ],
 
             // Domain events
@@ -87,7 +91,8 @@ class TenancyServiceProvider extends ServiceProvider
                 Listeners\UpdateSyncedResource::class,
             ],
 
-            // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
+            // Fired only when a synced resource is changed in a different DB
+            // than the origin DB (to avoid infinite loops)
             Events\SyncedResourceChangedInForeignDatabase::class => [],
         ];
     }
@@ -97,7 +102,7 @@ class TenancyServiceProvider extends ServiceProvider
         //
     }
 
-    public function boot()
+    public function boot(): void
     {
         $this->bootEvents();
         $this->mapRoutes();
@@ -105,20 +110,32 @@ class TenancyServiceProvider extends ServiceProvider
         $this->makeTenancyMiddlewareHighestPriority();
     }
 
-    protected function bootEvents()
+    /**
+     * @return void
+     */
+    protected function bootEvents(): void
     {
         foreach ($this->events() as $event => $listeners) {
             foreach ($listeners as $listener) {
-                if ($listener instanceof JobPipeline) {
-                    $listener = $listener->toListener();
-                }
-
-                Event::listen($event, $listener);
+                Event::listen($event, $this->resolveListener($listener));
             }
         }
     }
 
-    protected function mapRoutes()
+    /**
+     * @param mixed $listener
+     * @return callable|string
+     */
+    protected function resolveListener(mixed $listener): callable|string
+    {
+        if (is_object($listener) && $listener instanceof JobPipeline) {
+            return $listener->toListener();
+        }
+
+        return $listener;
+    }
+
+    protected function mapRoutes(): void
     {
         $this->app->booted(function () {
             if (file_exists(base_path('routes/tenant.php'))) {
@@ -128,7 +145,7 @@ class TenancyServiceProvider extends ServiceProvider
         });
     }
 
-    protected function makeTenancyMiddlewareHighestPriority()
+    protected function makeTenancyMiddlewareHighestPriority(): void
     {
         $tenancyMiddleware = [
             // Even higher priority than the initialization middleware
@@ -141,8 +158,10 @@ class TenancyServiceProvider extends ServiceProvider
             Middleware\InitializeTenancyByRequestData::class,
         ];
 
+        $kernel = $this->app->make(Kernel::class);
+
         foreach (array_reverse($tenancyMiddleware) as $middleware) {
-            $this->app[\Illuminate\Contracts\Http\Kernel::class]->prependToMiddlewarePriority($middleware);
+            $kernel->prependToMiddlewarePriority($middleware);
         }
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Stancl\Tenancy\Contracts;
 use Stancl\Tenancy\Database\Concerns;
 use Stancl\Tenancy\Database\Models\TenantPivot;
@@ -16,19 +18,19 @@ use Stancl\Tenancy\Database\Concerns\HasDatabase;
  * @property string|int $id
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property array $data
+ * @property array<string> $data
  *
  * @method static TenantCollection all($columns = ['*'])
  */
 class Tenant extends Model implements Contracts\Tenant, Contracts\TenantWithDatabase
 {
-    use Concerns\CentralConnection,
-        Concerns\GeneratesIds,
-        Concerns\HasInternalKeys,
-        Concerns\TenantRun,
-        Concerns\InvalidatesResolverCache,
-        HasDatabase,
-        HasDomains;
+    use Concerns\CentralConnection;
+    use Concerns\GeneratesIds;
+    use Concerns\HasInternalKeys;
+    use Concerns\TenantRun;
+    use Concerns\InvalidatesResolverCache;
+    use HasDatabase;
+    use HasDomains;
 
     protected static $modelsShouldPreventAccessingMissingAttributes = false;
 
@@ -49,16 +51,24 @@ class Tenant extends Model implements Contracts\Tenant, Contracts\TenantWithData
         return 'id';
     }
 
-    public function getTenantKey()
+    public function getTenantKey(): mixed
     {
         return $this->getAttribute($this->getTenantKeyName());
     }
 
+    /**
+     * @param array<int|string, static> $models
+     * @return TenantCollection<int|string, static>&Collection<int|string, static>
+     */
     public function newCollection(array $models = []): TenantCollection
     {
+        // @phpstan-ignore-next-line
         return new TenantCollection($models);
     }
 
+    /**
+     * @var array<string, class-string>
+     */
     protected $dispatchesEvents = [
         'saving' => Events\SavingTenant::class,
         'saved' => Events\TenantSaved::class,
@@ -70,9 +80,18 @@ class Tenant extends Model implements Contracts\Tenant, Contracts\TenantWithData
         'deleted' => Events\TenantDeleted::class,
     ];
 
-    public function users()
+    /**
+     * @return BelongsToMany<CentralUser, $this, TenantPivot>
+     */
+    public function users(): BelongsToMany
     {
-        return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
-            ->using(TenantPivot::class);
+        return $this->belongsToMany(
+            CentralUser::class,
+            'tenant_users',
+            'tenant_id',
+            'global_user_id',
+            'id',
+            'global_id'
+        )->using(TenantPivot::class);
     }
 }

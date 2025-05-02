@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
-//use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Authenticatable implements Syncable
+class User extends Authenticatable implements Syncable, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, ResourceSyncing;
+    use HasFactory;
+    use Notifiable;
+    use ResourceSyncing;
 
     protected $guarded = [];
     public $timestamps = false;
@@ -50,7 +52,7 @@ class User extends Authenticatable implements Syncable
         ];
     }
 
-    public function getGlobalIdentifierKey()
+    public function getGlobalIdentifierKey(): mixed
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }
@@ -65,6 +67,9 @@ class User extends Authenticatable implements Syncable
         return CentralUser::class;
     }
 
+    /**
+     * @return string[]
+     */
     public function getSyncedAttributeNames(): array
     {
         return [

@@ -4,7 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Contracts\Domain;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 
 class CreateTenant extends Command
 {
@@ -25,13 +26,12 @@ class CreateTenant extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
         $domain = $this->argument('domain');
         $tenantId = $this->argument('tenant');
         $databaseName = 'tenant_' . $tenantId;
 
-        // Vérifie si le tenant existe déjà
         if (Tenant::find($tenantId)) {
             $this->error("Le tenant '$tenantId' existe déjà.");
             return;
@@ -46,7 +46,6 @@ class CreateTenant extends Command
             ]
         ]);
 
-        // Ajoute un domaine
         $tenant->domains()->create([
             'domain' => $tenantId . '.' . $domain,
         ]);
