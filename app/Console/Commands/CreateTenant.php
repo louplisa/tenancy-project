@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use Illuminate\Console\Command;
-use Stancl\Tenancy\Contracts\Domain;
-use Stancl\Tenancy\Database\Concerns\HasDomains;
 
 class CreateTenant extends Command
 {

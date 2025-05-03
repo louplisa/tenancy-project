@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
@@ -9,6 +12,17 @@ use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * @property int $id
+ * @property string $global_id
+ * @property string $name
+ * @property string $email
+ * @property Carbon|null $email_verified_at
+ * @property string $password
+ * @property string $remember_token
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ */
 class User extends Authenticatable implements Syncable, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -17,7 +31,7 @@ class User extends Authenticatable implements Syncable, MustVerifyEmail
     use ResourceSyncing;
 
     protected $guarded = [];
-    public $timestamps = false;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -27,6 +41,8 @@ class User extends Authenticatable implements Syncable, MustVerifyEmail
         'name',
         'email',
         'password',
+        'created_at',
+        'updated_at',
     ];
 
     /**
