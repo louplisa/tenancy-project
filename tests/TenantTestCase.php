@@ -42,15 +42,24 @@ abstract class TenantTestCase extends BaseTestCase
         DB::disconnect();
 
         try {
-            $tenantDB = 'tenant_test-tenant';
-            DB::connection('tenant_template')->statement("DROP DATABASE IF EXISTS `$tenantDB`");
+            // Supprimer toutes les bases de données de test
+            $databases = DB::select("SELECT SCHEMA_NAME
+            FROM information_schema.SCHEMATA
+            WHERE SCHEMA_NAME LIKE 'tenant_test-tenant%'");
+
+            foreach ($databases as $database) {
+                DB::connection('tenant_template')
+                    ->statement("DROP DATABASE IF EXISTS `{$database->SCHEMA_NAME}`");
+            }
         } catch (\Exception $e) {
             Log::error("Error while dropping DB: " . $e->getMessage());
         }
 
-        Tenant::query()->where('id', 'test-tenant')->delete();
+        // Supprimer tous les tenants de test
+        Tenant::query()->where('id', 'LIKE', 'test-tenant%')->delete();
 
         parent::tearDown();
+
     }
 }
 
