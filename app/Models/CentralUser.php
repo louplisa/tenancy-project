@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
@@ -23,8 +25,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-class CentralUser extends Model implements SyncMaster
+class CentralUser extends Authenticatable implements SyncMaster
 {
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory;
     // Note that we force the central connection on this model
     use ResourceSyncing;
     use CentralConnection;
