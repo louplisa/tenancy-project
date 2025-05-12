@@ -7,10 +7,13 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\Notifiable;
 use Stancl\Tenancy\Contracts\Syncable;
+use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Stancl\Tenancy\Database\Models\TenantPivot;
 
 /**
  * @property int $id
@@ -23,7 +26,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-class User extends Authenticatable implements Syncable, MustVerifyEmail
+class User extends Authenticatable implements SyncMaster, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
@@ -93,5 +96,25 @@ class User extends Authenticatable implements Syncable, MustVerifyEmail
             'password',
             'email',
         ];
+    }
+
+    /**
+     * @return BelongsToMany<Tenant, $this, TenantPivot>
+     */
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Tenant::class,
+            'tenant_users',
+            'global_user_id',
+            'tenant_id',
+            'global_id'
+        )
+            ->using(TenantPivot::class);
+    }
+
+    public function getTenantModelName(): string
+    {
+        return User::class;
     }
 }
